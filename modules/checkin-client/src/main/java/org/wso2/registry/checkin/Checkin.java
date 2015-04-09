@@ -32,9 +32,10 @@ public class Checkin {
     private String registryUrl = null;
 
     public Checkin(ClientOptions clientOptions) throws SynchronizationException {
+        new Environment(clientOptions);
         this.checkInCommand = new CheckInCommand(clientOptions.getOutputFile(),
                 clientOptions.getWorkingLocation(), clientOptions.getUserUrl(),
-                clientOptions.getUsername(), true, true, false);
+                clientOptions.getUsername(), true, true, false, clientOptions.getEnvironment());
         this.clientOptions = clientOptions;
         String url = clientOptions.getUserUrl();
         String startingDir =  clientOptions.getWorkingLocation();
@@ -48,7 +49,8 @@ public class Checkin {
             if (metaOMElement == null) {
                 throw new SynchronizationException(MessageCode.CHECKOUT_BEFORE_UPDATE);
             }
-            registryUrl = metaOMElement.getAttributeValue(new QName("registryUrl"));
+
+            registryUrl = metaOMElement.getAttributeValue(new QName("origin"));
         }
     }
 

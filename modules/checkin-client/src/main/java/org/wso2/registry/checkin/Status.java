@@ -3,6 +3,7 @@ package org.wso2.registry.checkin;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.registry.core.jdbc.DumpConstants;
 import org.wso2.carbon.registry.synchronization.SynchronizationConstants;
 import org.wso2.carbon.registry.synchronization.SynchronizationException;
 import org.wso2.carbon.registry.synchronization.Utils;
@@ -10,6 +11,7 @@ import org.wso2.carbon.registry.synchronization.Utils;
 import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,6 +27,7 @@ public class Status {
     }
 
     public void execute() throws SynchronizationException {
+        System.out.println("current environment is " + clientOptions.getEnvironment());
         String path;
         if(clientOptions.getTargetResource() != null) {
             path = clientOptions.getTargetResource();
@@ -55,7 +58,15 @@ public class Status {
                 System.out.println("D "+path);
             }
         } else if (!file.isDirectory()) {
-            String metaMd5 = metaElement.getAttributeValue(new QName("md5"));
+            String environment = metaElement.getAttributeValue(new QName("environment"));
+            String metaMd5 = null;
+            Iterator environments = metaElement.getFirstChildWithName(new QName(DumpConstants.CONTENT)).getChildElements();
+            while(environments.hasNext()){
+                OMElement envChild = (OMElement)environments.next();
+                if(environment.equals(envChild.getAttributeValue(new QName(DumpConstants.RESOURCE_NAME)))) {
+                    metaMd5 = envChild.getText();
+                }
+            }
             if(!Utils.getMD5(file).equals(metaMd5)) {
                 updated.add(path);
                 System.out.println("U "+path);

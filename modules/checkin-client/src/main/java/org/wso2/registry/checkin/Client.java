@@ -17,8 +17,7 @@
 */
 package org.wso2.registry.checkin;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.registry.synchronization.SynchronizationException;
@@ -38,7 +37,7 @@ import java.util.Set;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Client
 {
-    private static final Log log = LogFactory.getLog(Client.class);
+    private static final Logger log = Logger.getLogger(Client.class);
     
     public final static int CHECKOUT = 1;
     public final static int CHECK_IN = 2;
@@ -48,6 +47,7 @@ public class Client
     public final static int PROPSET = 6;
     public final static int PROPDELETE = 7;
     public final static int STATUS = 8;
+    public final static int ENVIRONMENT = 9;  //newly added
 
     ClientOptions clientOptions;
 
@@ -75,7 +75,9 @@ public class Client
     }
 
     public void execute(String[] arguments) throws Exception {
+
         int operation = -1;
+
         if (arguments.length == 0) {
             throw new SynchronizationException(MessageCode.NO_OPTIONS_PROVIDED);
         }
@@ -109,9 +111,34 @@ public class Client
                         }
 
                         if (!arguments[i + 1].startsWith("-")) {
-                            clientOptions.setWorkingLocation(arguments[i + 1]);
+                            //clientOptions.setWorkingLocation(arguments[i + 1]);
+                            clientOptions.setEnvironment(arguments[i+1], null);
+                            clientOptions.setChangeEnvironment(true);
+                            new Environment(clientOptions).execute();
+                            if(clientOptions.getEnvironmentURL() != null) {
+                                System.out.println(clientOptions.getEnvironmentURL());
+                                clientOptions.setUserUrl(clientOptions.getEnvironmentURL());
+                            } else{
+                                System.out.println("Registry url is not found");
+                                System.exit(0);
+                            }
+
                             i ++;
                         }
+                        else{
+                            clientOptions.setChangeEnvironment(false);
+                            new Environment(clientOptions).execute();
+                            if(clientOptions.getEnvironmentURL() != null) {
+                                System.out.println(clientOptions.getEnvironmentURL());
+                                clientOptions.setUserUrl(clientOptions.getEnvironmentURL());
+                            } else{
+                                System.out.println("Registry url is not found");
+                                System.exit(0);
+                            }
+
+                            i ++;
+                        }
+
                     }
                 }
                 else if(arguments[i].equals("up") || arguments[i].equals("update")) {
@@ -126,14 +153,18 @@ public class Client
                 }
                 else if(arguments[i].equals("add")){
                     operation = ADD;
-                    if(arguments.length > i + 1){
-                        String targetResource = arguments[i+1];
+
+                    if (arguments.length > i + 1) {
+
+                        String targetResource = arguments[i + 1];
                         clientOptions.setTargetResource(targetResource);
+                        clientOptions.setNewEnvironment(false);
                         i++;
-                        if(arguments.length > i + 1 && "--mediatype".equals(arguments[i+1])){
-                            clientOptions.setMediatype(arguments[i+2]);
-                            i = i+2;
+                        if (arguments.length > i + 1 && "--mediatype".equals(arguments[i + 1])) {
+                            clientOptions.setMediatype(arguments[i + 2]);
+                            i = i + 2;
                         }
+
 
                     }
                 }
@@ -180,6 +211,31 @@ public class Client
                         String targetResource = arguments[i+1];
                         clientOptions.setTargetResource(targetResource);
                         break;  //No more arguments
+                    }
+                }
+
+                //newly added code fragment
+                else if(arguments[i].equals("environment") || arguments[i].equals("env")) {
+                    operation = ENVIRONMENT;
+                    if(arguments.length > i + 1){
+                        if(arguments[i+1].equals("add")) {
+                            // newly added
+                            if (arguments.length > i + 3) {
+                                clientOptions.setEnvironment(arguments[i + 2], arguments[i + 3]);
+                                clientOptions.setNewEnvironment(true);
+                                i = i + 3;
+                            } else if (arguments.length > i + 2 && arguments[i + 2].equals("origin")) {
+                                clientOptions.setEnvironment("origin", null);
+                                clientOptions.setNewEnvironment(true);
+                                i = i + 2;
+                            }
+                        }
+                        else if(arguments[i+1].equals("switch")){
+                            if(arguments.length > i+2){
+                                clientOptions.setEnvironment(arguments[i+2], null);
+                                clientOptions.setChangeEnvironment(true);
+                            }
+                        }
                     }
                 }
 
@@ -273,9 +329,11 @@ public class Client
             checkout.execute();
         }
         else if (operation == CHECK_IN) {
+            //new Environment(clientOptions);
             new Checkin(clientOptions).execute();
         }
         else if (operation == UPDATE) {
+            new Environment(clientOptions);
             Update update = new Update(clientOptions);
             update.execute();
         }
@@ -298,6 +356,10 @@ public class Client
         else if (operation == STATUS) {
             Status status = new Status(clientOptions);
             status.execute();
+        }
+        else if (operation == ENVIRONMENT){
+            Environment env = new Environment(clientOptions);
+            env.execute();
         }
 
 

@@ -5,8 +5,6 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.registry.synchronization.SynchronizationConstants;
 import org.wso2.carbon.registry.synchronization.SynchronizationException;
 import org.wso2.carbon.registry.synchronization.Utils;
@@ -20,13 +18,14 @@ import java.io.*;
 public class Add {
     private ClientOptions clientOptions;
     private String registryUrl = null;
-    private Log log = LogFactory.getLog(Add.class);
 
     public Add(ClientOptions clientOptions) {
         this.clientOptions = clientOptions;
     }
 
     public void execute() throws SynchronizationException {
+
+
         String path = clientOptions.getWorkingLocation() + File.separator + clientOptions.getTargetResource();
 
         String metaFile = path.substring(0, path.lastIndexOf(File.separator)) + File.separator + SynchronizationConstants.META_DIRECTORY +
@@ -38,7 +37,7 @@ public class Add {
             OMElement resourceElement = new StAXOMBuilder(new FileInputStream(file)).getDocumentElement();
             pathAttribute = resourceElement.getAttribute(new QName("path")).getAttributeValue();
             OMAttribute registryUrlAttr;
-            if((registryUrlAttr = resourceElement.getAttribute(new QName("registryUrl")) ) != null){
+            if ((registryUrlAttr = resourceElement.getAttribute(new QName("origin"))) != null) {
                 registryUrl = registryUrlAttr.getAttributeValue();
             }
         } catch (FileNotFoundException e) {
@@ -47,6 +46,7 @@ public class Add {
             throw new SynchronizationException(MessageCode.RESOURCE_METADATA_CORRUPTED);
         }
         addResourceMetadataRecursively(path, pathAttribute, true);
+
     }
 
     private void addResourceMetadataRecursively(String path, String parentRegistryPath, boolean root) throws SynchronizationException {
@@ -104,8 +104,9 @@ public class Add {
             xmlWriter.writeAttribute("isCollection", String.valueOf(isCollection));
             xmlWriter.writeAttribute("path", registryPath);
             if(registryUrl != null){
-                xmlWriter.writeAttribute("registryUrl", registryUrl);
+                xmlWriter.writeAttribute("origin", registryUrl);
             }
+            xmlWriter.writeAttribute("environment", clientOptions.getEnvironment());
             xmlWriter.writeAttribute("status", "added");
 
             if(root && clientOptions.getMediatype() != null){

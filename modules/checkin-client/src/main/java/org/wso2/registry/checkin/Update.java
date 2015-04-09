@@ -17,6 +17,8 @@
 package org.wso2.registry.checkin;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.synchronization.SynchronizationException;
 import org.wso2.carbon.registry.synchronization.Utils;
@@ -37,6 +39,7 @@ public class Update {
 
     public int getUpdatedCount() {
         return updateCommand.getUpdatedCount();
+
     }
 
     public int getConflictedCount() {
@@ -48,13 +51,14 @@ public class Update {
     }
 
     public int getNotDeletedCount() {
+
         return updateCommand.getNotDeletedCount();
     }
 
     public Update(ClientOptions clientOptions) throws SynchronizationException {
         this.updateCommand = new UpdateCommand(clientOptions.getOutputFile(),
                 clientOptions.getWorkingLocation(), clientOptions.getUserUrl(),
-                false, clientOptions.getUsername(), true);
+                false, clientOptions.getUsername(), true,clientOptions.getEnvironment());
         this.updateCommand.setDumpLite(clientOptions.isDumpLite());
         this.clientOptions = clientOptions;
         String url = clientOptions.getUserUrl();
@@ -69,7 +73,7 @@ public class Update {
             if (metaOMElement == null) {
                 throw new SynchronizationException(MessageCode.CHECKOUT_BEFORE_UPDATE);
             }
-            registryUrl = metaOMElement.getAttributeValue(new QName("registryUrl"));
+            registryUrl = metaOMElement.getAttributeValue(new QName("origin"));
         }
     }
 

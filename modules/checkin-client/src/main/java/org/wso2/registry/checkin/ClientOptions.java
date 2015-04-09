@@ -31,6 +31,8 @@ public class ClientOptions {
     private String username = null;
     private String password = null;
     private String userUrl = null;
+    private String environmentURL = null;  // newly added
+    private String environment = "origin";
     private String workingLocation = ".";
     private String outputFile = null;
     private int tenantId = -1;
@@ -43,6 +45,34 @@ public class ClientOptions {
     private Map<String, String> properties = new HashMap<String, String>();
     private Set<String> deletedProperties = new HashSet<String>();
     private boolean dumpLite = false;
+    private boolean isNewEnvironment = false;
+    private boolean isChangeEnvironment = false;
+
+    public void setChangeEnvironment(boolean changed){
+        isChangeEnvironment = changed;
+    }
+    public boolean isChangeEnvironment(){
+        return isChangeEnvironment;
+    }
+    public void setNewEnvironment(boolean change){
+        isNewEnvironment = change;
+    }
+    public boolean isNewEnvironment(){
+        return isNewEnvironment;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public String getEnvironmentURL(){
+        return environmentURL;
+    }
+    public void setEnvironment(String env, String url){
+        environmentURL=url;
+        environment = env;
+
+    }
 
     public boolean isInteractive() {
         return interactive;
@@ -69,7 +99,10 @@ public class ClientOptions {
     }
 
     public String getUserUrl() {
-        return userUrl;
+        if(environment.equals("origin"))
+            return userUrl;
+        else
+            return this.getEnvironmentURL();
     }
 
     public void setUserUrl(String userUrl) {
